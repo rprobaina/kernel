@@ -1,5 +1,5 @@
 /*
- *	Program: r_state
+ *	Program: s_state
  *	Author: Ricardo Robaina <rrobaina@redhat.com>
  *	Version: 1.0
  *	Date: 2022/04/11

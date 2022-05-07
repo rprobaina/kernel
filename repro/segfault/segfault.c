@@ -2,9 +2,9 @@
  *	Program: segfault
  *	Author: Ricardo Robaina <rrobaina@redhat.com>
  *	Version: 1.0
- *	Date: 2022/04/11
+ *	Date: 2022/05/06
  *
- *	This small program will trigger a segemntation fault, by acessing an unmaped aread.
+ *	This small program will trigger a segemntation fault, by acessing an unmaped memory area.
  *
  */
 #include <stdio.h>

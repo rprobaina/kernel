@@ -1,5 +1,5 @@
 /*
- *	This small program wil derreference a bad pointer.
+ *	This small program will derreference a bad pointer.
  *
  */
 #include <stdio.h>

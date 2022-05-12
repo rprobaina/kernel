@@ -1,5 +1,5 @@
 /*
- *	This small program wil derreference a null pointer.
+ *	This small program will derreference a null pointer.
  *
  */
 #include <stdio.h>

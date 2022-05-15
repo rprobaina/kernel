@@ -13,8 +13,6 @@ MODULE_AUTHOR("Ricardo Robaina <rrobaina@redhat.com>");
 MODULE_DESCRIPTION("Print all tasks");
 MODULE_VERSION("1.0");
 
-void get_task_state_str(long int state, char *state_str);
-
 int load_func(void)
 {
 	struct task_struct *task;

@@ -17,23 +17,28 @@ int main()
 {
 	/* usage example */
 	void *brk_addr;
+	unsigned long size_after, size_before; /* used to compute size */
 	
 	brk_addr = sbrk(0); /* getting the program break */
-	printf("program break addr: %ld\n", brk_addr);
+	printf("program break addr: 0x%lx\n", brk_addr);
+	size_before = (unsigned long) brk_addr;
 
 	/* allocating memory for an unsigned long */
 	unsigned long *lv = (unsigned long *) alloc_mem(sizeof(unsigned long));	
 	
 	brk_addr = sbrk(0);
-	printf("program break addr: %ld\n", brk_addr);
+	printf("program break addr: 0x%lx\n", brk_addr);
+	size_after = (unsigned long) brk_addr;
 
 	/* using the dynamic allocated memory */
 	*lv = 1;
-	printf("addr: %ld, val: %ld\n", lv, *lv);
+	printf("addr: 0x%lx, val: %ld, size: %ld (bytes)\n", lv, *lv, size_after - size_before);
 
 	/* freeing the allocated heep area */
 	brk_addr = free_mem(sizeof(unsigned long));
-	printf("program break addr: %ld\n", brk_addr);
+
+	brk_addr = sbrk(0);
+	printf("program break addr: 0x%lx\n", brk_addr);
 	
 	return EXIT_SUCCESS;
 }

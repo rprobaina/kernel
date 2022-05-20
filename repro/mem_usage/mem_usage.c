@@ -13,9 +13,10 @@
 #define KB (1UL << 10)
 #define MB (1UL << 20) 
 
-#define DEFAULT_VSZ_SIZE (2000 * MB)
-#define DEFAULT_RSS_INC (1 * MB)
-#define DEFAULT_TIME_INC 5   /* seconds */
+#define DEFAULT_VSZ_SIZE (2000 * MB) 	/* 2 GB */
+#define DEFAULT_RSS_INC (1 * MB) 	/* 1 MB */	
+#define DEFAULT_TIME_INC 5   		/* seconds */
+#define FINAL_SLEEP 120			/* 2 minutes */
 
 int main(int argc, char *argv[])
 {
@@ -48,6 +49,13 @@ int main(int argc, char *argv[])
 		printf("%d (MB) of memory have been used (RSS).\n", rss_inc);
 		printf("VSZ: %ld\tRSS: %ld\n", vsz_size, rss_size);
 	}
+
+	/* freeing @array should reduce both VSZ and RSS */
+	free(array); 
+	printf("The memory has been freed.\n", rss_inc);
+	printf("VSZ: ~0\tRSS: ~0\n");
 	
+	sleep(FINAL_SLEEP);	
+
 	return EXIT_SUCCESS;
 }

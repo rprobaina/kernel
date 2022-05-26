@@ -4,7 +4,7 @@
 #
 # usage: ./hugepages_monitor <TIME INTERVAL>
 
-TIME="$1"
+TIME=${1:-5}
 HPSYS_DIR="/sys/kernel/mm/hugepages/"
 PMD_HUGE="hugepages-2048kB"
 PUD_HUGE="hugepages-1048576kB"

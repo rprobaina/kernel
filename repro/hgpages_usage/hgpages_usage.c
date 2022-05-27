@@ -12,10 +12,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <linux/mman.h>
 #include <string.h>
 #include <errno.h>
 
-#define KB (1UL << 10)
 #define MB (1UL << 20)
 #define GB (1UL << 30)
 
@@ -24,6 +24,8 @@
 
 #define PMD_SIZE (2 * MB)
 #define PUD_SIZE GB
+
+#define SLEEP_TIME 120
 
 int main(int argc, char *argv[])
 {
@@ -40,19 +42,22 @@ int main(int argc, char *argv[])
 
 	size = hpq * (hpt ? PUD_SIZE : PMD_SIZE);
 	
-	/* TODO add support to PUD_SIZE huge pages, based on @hpt*/
-	buf_p = (char *) mmap(NULL, size, PROT_READ, 
-		MAP_PRIVATE|MAP_ANON|MAP_HUGETLB, 0, 0);
-	
+	if (!hpt){ 
+		/* 2M hugepage */
+		buf_p = (char *) mmap(NULL, size, PROT_READ, 
+			MAP_PRIVATE|MAP_ANON|MAP_HUGETLB|MAP_HUGE_2MB, 0, 0); 
+	}else{ 
+		/* 1GB hugepage */
+		buf_p = (char *) mmap(NULL, size, PROT_READ, 
+			MAP_PRIVATE|MAP_ANON|MAP_HUGETLB|MAP_HUGE_1GB, 0, 0); 
+	}
+
 	if(buf_p == (void *) -1){
 		printf("errno: %d, message: %s\n", errno, strerror(errno));
 		return EXIT_FAILURE;		
 	}
 
-	/* FIXME it segfaults */
-	//memset(buf_p, 0, size);
-
-	sleep(120);
+	sleep(SLEEP_TIME);
 
 	munmap(buf_p, size);
 

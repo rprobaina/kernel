@@ -33,13 +33,15 @@ int load_func(void)
 	unsigned long _pgd_index, _p4d_index, _pud_index, _pmd_index, _pte_index;
 
 	/* allocating a memory page to follow */
-	p = alloc_pages(GFP_KERNEL, 0);
-	//p = kmalloc(1024, GFP_ATOMIC);
+	//	p = alloc_pages(GFP_KERNEL, 0);
+	p = kmalloc(1024, GFP_ATOMIC);
 	if(!p){
 		printk("Memory unavailable!\n");
 		return 1;
 	}
 	
+	memset(p, 0, 1024);
+
 	printk("-------------------------------------\n");
 
 	/* finding the virtual address of p */
@@ -53,39 +55,60 @@ int load_func(void)
 
 	pgd = pgd_offset(ts_mm, v_addr);	
 	_pgd_index = pgd_index(v_addr);
+	if (pgd_none(*pgd) || pgd_bad(*pgd)){
+		return 0;
+	}
 	printk("PGD: 0x%lx (index: 0x%lx)", (unsigned long) pgd, _pgd_index);
 
+	/* finding p4d and its index (five-level page table support)*/
 	p4d = p4d_offset(pgd, v_addr);
 	_p4d_index = p4d_index(v_addr);
-        printk("PGD: 0x%lx (index: 0x%lx)", (unsigned long) p4d, _p4d_index);
+	if (p4d_none(*p4d) || p4d_bad(*p4d)){
+		return 0;
+	}
+        printk("P4D: 0x%lx (index: 0x%lx)", (unsigned long) p4d, _p4d_index);
 
+	/* finding PUD and its index */
 	pud = pud_offset(p4d, v_addr);
 	_pud_index = pud_index(v_addr);
-	printk("P4D: 0x%lx (index: 0x%lx)", (unsigned long) pud, _pud_index);
+	if (pud_none(*pud) || pud_bad(*pud)){
+		return 0;
+	}
+	printk("PUD: 0x%lx (index: 0x%lx)", (unsigned long) pud, _pud_index);
 
+	/* finding PMD and its index */
 	pmd = pmd_offset(pud, v_addr);
 	_pmd_index = pmd_index(v_addr);
+	if (pmd_none(*pmd) || pmd_bad(*pmd)){
+		return 0;
+	}
 	printk("PMD: 0x%lx (index: 0x%lx)", (unsigned long) pmd, _pmd_index);
 	
+	/* finding PTE and its index */
 	pte = pte_offset_kernel(pmd, v_addr);
 	_pte_index = pte_index(v_addr);
+	if(!pte_present(*pte)){
+		return 0;
+	}
 	printk("PTE: 0x%lx (index: 0x%lx)", (unsigned long) pte, _pte_index);
 
-	/* FIXME
-	p_addr = pte_val(*pte) & PAGE_MASK;
+	/* finally, finding the physical address */
+	p_addr = pte->pte;				/* FIXME not sure if it's accurate*/
 	printk("PHY: 0x%lx\n", p_addr);
 
-	unsigned long api_p_addr = virt_to_phys(p);
-	printk("API PHYSICAL ADDR: 0x%lu\n", api_p_addr);
+	/*
+		unsigned long api_p_addr = virt_to_phys(p);
+		printk("API PHYSICAL ADDR: 0x%lu\n", api_p_addr);
 	*/
-
+	
 	return 0;
 }
 
 void unload_func(void)
 {
 	/* freeing the allocated page */
-	__free_pages(p, 0);
+	//__free_pages(p, 0);
+	kfree(p);
 	printk("-------------------------------------\n");
 }
 

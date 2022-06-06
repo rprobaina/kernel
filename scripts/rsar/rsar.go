@@ -98,7 +98,7 @@ func _get_loadavg() loadavg {
 	return l
 }
 
-func get_meminfo() meminfo {
+func _get_meminfo() meminfo {
 
 	var m meminfo
 
@@ -165,13 +165,13 @@ func get_meminfo() meminfo {
 
 func _print_loadavg(l loadavg) {
 	t := time.Now()
-	fmt.Println("\t pcnt\trunq\tavg01\tavg05\tavg15")
 	fmt.Printf(t.Format("15:10:05") + " %s\t%s\t%s\t%s\t%s\n", l.pcnt, l.runq, l.avg01, l.avg05, l.avg15)
 }
 
-func print_meminfo(m meminfo) {
+func _print_meminfo(m meminfo) {
 	var err error
 	var tot, free float64
+	t := time.Now()
 
 	tot, err = strconv.ParseFloat(m.total, 32)
 	if err != nil {
@@ -185,13 +185,25 @@ func print_meminfo(m meminfo) {
 
 	used := 100 * (tot - free) / tot
 
-	fmt.Printf("memtot\tmemfree\tmemused\tmemavail\tbuffers\tcached\n")
-	fmt.Printf("%s\t%s\t%.2f\t%s\t\t%s\t%s\n", m.total, m.free, used, m.available, m.buffers, m.cached)
+	fmt.Printf(t.Format("15:10:05") + " %s\t%s\t%.2f\t%s\t\t%s\t%s\n", m.total, m.free, used, m.available, m.buffers, m.cached)
 }
 
-func load_average() {
+func loadavg_header() {
+	fmt.Println("\t pcnt\trunq\tavg01\tavg05\tavg15")
+}
+
+func mem_header() {
+	fmt.Printf("\t memtot\t\tmemfree\tmemused\tmemavail\tbuffers\tcached\n")
+}
+
+func loadavg_stat() {
 	l := _get_loadavg()
 	_print_loadavg(l)
+}
+
+func mem_stat() {
+	m := _get_meminfo()
+	_print_meminfo(m)
 }
 
 func help() {
@@ -231,15 +243,22 @@ func main() {
 		}
 	}
 
-	for i := 0; i < samples; i++ {
-		switch args[1] {
-		case "--load":
-			load_average()
-		default:
-			fmt.Println(args[1] + " is an invalid option!")
-			help()
+	switch args[1] {
+	case "--load":
+		loadavg_header()
+		for i := 0; i < samples; i++ {
+			loadavg_stat()
+			time.Sleep(time.Duration(interval) * time.Second)
 		}
-		time.Sleep(time.Duration(interval) * time.Second)
+	case "--mem":
+		mem_header()
+		for i := 0; i < samples; i++ {
+			mem_stat()
+			time.Sleep(time.Duration(interval) * time.Second)
+		}
+	default:
+		fmt.Println(args[1] + " is an invalid option!")
+		help()
 	}
 
 }

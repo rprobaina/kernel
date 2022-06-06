@@ -10,6 +10,8 @@ import (
 var (
 	PROCDIR_LOADAVG string = "/proc/loadavg"
 	PROCDIR_MEMINFO string = "/proc/meminfo"
+	DEFAULT_SAMPLES int = 1
+	DEFAULT_INTERVAL int = 1
 )
 
 type loadavg struct {
@@ -185,7 +187,32 @@ func print_meminfo(m meminfo) {
 	fmt.Printf("%s\t%s\t%.2f\t%s\t\t%s\t%s\n", m.total, m.free, used, m.available, m.buffers, m.cached)
 }
 
+func help() {
+	fmt.Println("")
+	fmt.Println("\t\t\tRSAR Help")
+	fmt.Println("")
+	fmt.Println("\tUsage:")
+	fmt.Println("\t\t./rsar --<option> <samples> <interval> \n\n")
+	fmt.Println("\tOptions:")
+	fmt.Println("\t\t--help: to get help")
+	fmt.Println("\t\t--all: all statistics")
+	fmt.Println("\t\t--load: load average statistics")
+	fmt.Println("\t\t--cpu: CPU statistics")
+	fmt.Println("\t\t--mem: memory statistics")
+	fmt.Println("\t\t--swap: swap statistics")
+	fmt.Println("\t\t--proc: process state statostics")
+	fmt.Println("")
+}
+
 func main() {
+
+	args := os.Args
+
+	if len(args) < 2 || args[1] == "--help" {
+		help()
+		os.Exit(0)
+	}
+
 	l := get_loadavg()
 	print_loadavg(l)
 

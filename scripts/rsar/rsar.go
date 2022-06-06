@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var (
@@ -77,7 +78,7 @@ type meminfo struct {
 }
 
 /* get_loadavg: */
-func get_loadavg() loadavg {
+func _get_loadavg() loadavg {
 
 	var l loadavg
 
@@ -162,9 +163,10 @@ func get_meminfo() meminfo {
 	return m
 }
 
-func print_loadavg(l loadavg) {
-	fmt.Println("pcbt\trunq\tavg01\tavg05\tavg15")
-	fmt.Printf("%s\t%s\t%s\t%s\t%s\n", l.pcnt, l.runq, l.avg01, l.avg05, l.avg15)
+func _print_loadavg(l loadavg) {
+	t := time.Now()
+	fmt.Println("\t pcnt\trunq\tavg01\tavg05\tavg15")
+	fmt.Printf(t.Format("15:10:05") + " %s\t%s\t%s\t%s\t%s\n", l.pcnt, l.runq, l.avg01, l.avg05, l.avg15)
 }
 
 func print_meminfo(m meminfo) {
@@ -187,6 +189,11 @@ func print_meminfo(m meminfo) {
 	fmt.Printf("%s\t%s\t%.2f\t%s\t\t%s\t%s\n", m.total, m.free, used, m.available, m.buffers, m.cached)
 }
 
+func load_average() {
+	l := _get_loadavg()
+	_print_loadavg(l)
+}
+
 func help() {
 	fmt.Println("")
 	fmt.Println("\t\t\tRSAR Help")
@@ -206,21 +213,33 @@ func help() {
 
 func main() {
 
+	var err error
 	args := os.Args
+	samples := DEFAULT_SAMPLES
+	interval := DEFAULT_INTERVAL
 
 	if len(args) < 2 || args[1] == "--help" {
 		help()
 		os.Exit(0)
 	}
 
-	l := get_loadavg()
-	print_loadavg(l)
+	if len(args) == 4 {
+		samples, err = strconv.Atoi(args[2])
+		interval, err = strconv.Atoi(args[3])
+		if err != nil {
+			// FIXME
+		}
+	}
 
-	fmt.Println(" ")
-
-	m := get_meminfo()
-	print_meminfo(m)
-
-	fmt.Println(m)
+	for i := 0; i < samples; i++ {
+		switch args[1] {
+		case "--load":
+			load_average()
+		default:
+			fmt.Println(args[1] + " is an invalid option!")
+			help()
+		}
+		time.Sleep(time.Duration(interval) * time.Second)
+	}
 
 }

@@ -9,10 +9,11 @@ import (
 )
 
 var (
-	PROCDIR_LOADAVG string = "/proc/loadavg"
-	PROCDIR_MEMINFO string = "/proc/meminfo"
 	DEFAULT_SAMPLES int = 1
 	DEFAULT_INTERVAL int = 1
+	PROCDIR_LOADAVG string = "/proc/loadavg"
+	PROCDIR_MEMINFO string = "/proc/meminfo"
+	PROCDIR_SWAPS string = "/proc/swaps"
 )
 
 type loadavg struct {
@@ -75,6 +76,14 @@ type meminfo struct {
 	directMap4k       string
 	directMap2M       string
 	directMap1G       string
+}
+
+type swaps struct {
+	filename string
+	swaptype string
+	size	 string
+	used	 string
+	priority string
 }
 
 /* get_loadavg: */
@@ -163,6 +172,26 @@ func _get_meminfo() meminfo {
 	return m
 }
 
+func _get_swaps() swaps {
+
+	var s swaps
+
+	dat, err := os.ReadFile(PROCDIR_SWAPS)
+	if err != nil {
+		fmt.Printf("Error reading %s\n", PROCDIR_SWAPS)
+	}
+
+	dat_s := strings.Split(string(dat), "\n")
+
+	s.filename = strings.Split(strings.Join(strings.Fields(strings.TrimSpace(dat_s[1])), " "), " ")[0]
+	s.swaptype = strings.Split(strings.Join(strings.Fields(strings.TrimSpace(dat_s[1])), " "), " ")[1]
+	s.size = strings.Split(strings.Join(strings.Fields(strings.TrimSpace(dat_s[1])), " "), " ")[2]
+	s.used = strings.Split(strings.Join(strings.Fields(strings.TrimSpace(dat_s[1])), " "), " ")[3]
+	s.priority = strings.Split(strings.Join(strings.Fields(strings.TrimSpace(dat_s[1])), " "), " ")[4]
+
+	return s
+}
+
 func _print_loadavg(l loadavg) {
 	t := time.Now()
 	fmt.Printf(t.Format("15:10:05") + " %s\t%s\t%s\t%s\t%s\n", l.pcnt, l.runq, l.avg01, l.avg05, l.avg15)
@@ -188,12 +217,21 @@ func _print_meminfo(m meminfo) {
 	fmt.Printf(t.Format("15:10:05") + " %s\t%s\t%.2f\t%s\t\t%s\t%s\n", m.total, m.free, used, m.available, m.buffers, m.cached)
 }
 
+func _print_swaps(s swaps) {
+	t := time.Now()
+	fmt.Printf(t.Format("15:10:05") + " %s\t%s\n", s.size, s.used)
+}
+
 func loadavg_header() {
 	fmt.Println("\t pcnt\trunq\tavg01\tavg05\tavg15")
 }
 
 func mem_header() {
 	fmt.Printf("\t memtot\t\tmemfree\tmemused\tmemavail\tbuffers\tcached\n")
+}
+
+func swap_header() {
+	fmt.Printf("\t swap total\tswap used\n")
 }
 
 func loadavg_stat() {
@@ -204,6 +242,11 @@ func loadavg_stat() {
 func mem_stat() {
 	m := _get_meminfo()
 	_print_meminfo(m)
+}
+
+func swap_stat() {
+	s := _get_swaps()
+	_print_swaps(s)
 }
 
 func help() {
@@ -254,6 +297,12 @@ func main() {
 		mem_header()
 		for i := 0; i < samples; i++ {
 			mem_stat()
+			time.Sleep(time.Duration(interval) * time.Second)
+		}
+	case "--swap":
+		swap_header()
+		for i := 0; i < samples; i++ {
+			swap_stat()
 			time.Sleep(time.Duration(interval) * time.Second)
 		}
 	default:

@@ -6,14 +6,17 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"io/ioutil"
 )
 
 var (
-	DEFAULT_SAMPLES int = 1
-	DEFAULT_INTERVAL int = 1
-	PROCDIR_LOADAVG string = "/proc/loadavg"
-	PROCDIR_MEMINFO string = "/proc/meminfo"
-	PROCDIR_SWAPS string = "/proc/swaps"
+	DEFAULT_SAMPLES  int    = 1
+	DEFAULT_INTERVAL int    = 1
+	PROCDIR		 string = "/proc"
+	PROCDIR_LOADAVG  string = "/proc/loadavg"
+	PROCDIR_MEMINFO  string = "/proc/meminfo"
+	PROCDIR_SWAPS    string = "/proc/swaps"
+	STATUSFILE	 string = "stat"
 )
 
 type loadavg struct {
@@ -81,9 +84,67 @@ type meminfo struct {
 type swaps struct {
 	filename string
 	swaptype string
-	size	 string
-	used	 string
+	size     string
+	used     string
 	priority string
+}
+
+type procstat struct {
+	name                       string
+	umask                      string
+	state                      string
+	tgid                       string
+	ngid                       string
+	pid                        string
+	ppid                       string
+	tracerpid                  string
+	uid                        string
+	gid                        string
+	fdsize                     string
+	groups                     string
+	nstgid                     string
+	nspid                      string
+	nspgid                     string
+	nssid                      string
+	vmpeak                     string
+	vmsize                     string
+	vmlck                      string
+	vmpin                      string
+	vmhwm                      string
+	vmrss                      string
+	rssanon                    string
+	rssfile                    string
+	rssshmem                   string
+	vmdata                     string
+	vmstk                      string
+	vmexe                      string
+	vmlib                      string
+	vmpte                      string
+	vmswap                     string
+	hugetlbpages               string
+	coredumping                string
+	thp_enabled                string
+	threads                    string
+	sigq                       string
+	sigpnd                     string
+	shdpnd                     string
+	sigblk                     string
+	sigign                     string
+	sigcgt                     string
+	capinh                     string
+	capprm                     string
+	capeff                     string
+	capbnd                     string
+	capamb                     string
+	nonewprivs                 string
+	seccomp                    string
+	speculation_store_bypass   string
+	cpus_allowed               string
+	cpus_allowed_list          string
+	mems_allowed               string
+	mems_allowed_list          string
+	voluntary_ctxt_switches    string
+	nonvoluntary_ctxt_switches string
 }
 
 /* get_loadavg: */
@@ -192,9 +253,39 @@ func _get_swaps() swaps {
 	return s
 }
 
+// TODO
+func _get_pps() []procstat {
+	files, err := ioutil.ReadDir(PROCDIR)
+	if err != nil {
+		//FIXME log.Fatal(err)
+	}
+	for _, f := range files {
+		if f.Name() == "acpi" {
+			break
+		}
+
+		pf := PROCDIR + "/" + f.Name() + "/" + STATUSFILE
+
+		dat, err := os.ReadFile(pf)
+		if err != nil {
+			fmt.Printf("Error reading %s\n", PROCDIR_SWAPS)
+			continue
+		}
+
+		fmt.Println(pf)
+		dat_s := strings.Split(string(dat), " ")
+		fmt.Println(dat_s[1])
+	}
+	return nil
+}
+
+/*******************/
+/* PRINT FUNCTIONS */
+/*******************/
+
 func _print_loadavg(l loadavg) {
 	t := time.Now()
-	fmt.Printf(t.Format("15:10:05") + " %s\t%s\t%s\t%s\t%s\n", l.pcnt, l.runq, l.avg01, l.avg05, l.avg15)
+	fmt.Printf(t.Format("15:10:05")+" %s\t%s\t%s\t%s\t%s\n", l.pcnt, l.runq, l.avg01, l.avg05, l.avg15)
 }
 
 func _print_meminfo(m meminfo) {
@@ -214,12 +305,17 @@ func _print_meminfo(m meminfo) {
 
 	used := 100 * (tot - free) / tot
 
-	fmt.Printf(t.Format("15:10:05") + " %s\t%s\t%.2f\t%s\t\t%s\t%s\n", m.total, m.free, used, m.available, m.buffers, m.cached)
+	fmt.Printf(t.Format("15:10:05")+" %s\t%s\t%.2f\t%s\t\t%s\t%s\n", m.total, m.free, used, m.available, m.buffers, m.cached)
 }
 
 func _print_swaps(s swaps) {
 	t := time.Now()
-	fmt.Printf(t.Format("15:10:05") + " %s\t%s\n", s.size, s.used)
+	fmt.Printf(t.Format("15:10:05")+" %s\t%s\n", s.size, s.used)
+}
+
+// TODO
+func _print_pps(p procstat) {
+	fmt.Println(p)
 }
 
 func loadavg_header() {
@@ -232,6 +328,11 @@ func mem_header() {
 
 func swap_header() {
 	fmt.Printf("\t swap total\tswap used\n")
+}
+
+// TODO
+func pps_header() {
+	fmt.Printf("\t ---")
 }
 
 func loadavg_stat() {
@@ -249,6 +350,12 @@ func swap_stat() {
 	_print_swaps(s)
 }
 
+func pps_stat() {
+	pp := _get_pps() // pp is a slice
+	fmt.Println(pp)
+	//_print_pps()
+}
+
 func help() {
 	fmt.Println("")
 	fmt.Println("\t\t\tRSAR Help")
@@ -262,7 +369,8 @@ func help() {
 	fmt.Println("\t\t--cpu: CPU statistics")
 	fmt.Println("\t\t--mem: memory statistics")
 	fmt.Println("\t\t--swap: swap statistics")
-	fmt.Println("\t\t--proc: process state statostics")
+	fmt.Println("\t\t--proc: process state statistics")
+	fmt.Println("\t\t--pps: per process statistics")
 	fmt.Println("")
 }
 
@@ -303,6 +411,12 @@ func main() {
 		swap_header()
 		for i := 0; i < samples; i++ {
 			swap_stat()
+			time.Sleep(time.Duration(interval) * time.Second)
+		}
+	case "--pps":
+		pps_header()
+		for i := 0; i < samples; i++ {
+			pps_stat()
 			time.Sleep(time.Duration(interval) * time.Second)
 		}
 	default:

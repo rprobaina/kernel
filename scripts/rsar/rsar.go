@@ -2,21 +2,21 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 	"time"
-	"io/ioutil"
 )
 
 var (
 	DEFAULT_SAMPLES  int    = 1
 	DEFAULT_INTERVAL int    = 1
-	PROCDIR		 string = "/proc"
+	PROCDIR          string = "/proc"
 	PROCDIR_LOADAVG  string = "/proc/loadavg"
 	PROCDIR_MEMINFO  string = "/proc/meminfo"
 	PROCDIR_SWAPS    string = "/proc/swaps"
-	STATUSFILE	 string = "stat"
+	STATUSFILE       string = "stat"
 )
 
 type loadavg struct {
@@ -90,61 +90,58 @@ type swaps struct {
 }
 
 type procstat struct {
-	name                       string
-	umask                      string
-	state                      string
-	tgid                       string
-	ngid                       string
-	pid                        string
-	ppid                       string
-	tracerpid                  string
-	uid                        string
-	gid                        string
-	fdsize                     string
-	groups                     string
-	nstgid                     string
-	nspid                      string
-	nspgid                     string
-	nssid                      string
-	vmpeak                     string
-	vmsize                     string
-	vmlck                      string
-	vmpin                      string
-	vmhwm                      string
-	vmrss                      string
-	rssanon                    string
-	rssfile                    string
-	rssshmem                   string
-	vmdata                     string
-	vmstk                      string
-	vmexe                      string
-	vmlib                      string
-	vmpte                      string
-	vmswap                     string
-	hugetlbpages               string
-	coredumping                string
-	thp_enabled                string
-	threads                    string
-	sigq                       string
-	sigpnd                     string
-	shdpnd                     string
-	sigblk                     string
-	sigign                     string
-	sigcgt                     string
-	capinh                     string
-	capprm                     string
-	capeff                     string
-	capbnd                     string
-	capamb                     string
-	nonewprivs                 string
-	seccomp                    string
-	speculation_store_bypass   string
-	cpus_allowed               string
-	cpus_allowed_list          string
-	mems_allowed               string
-	mems_allowed_list          string
-	voluntary_ctxt_switches    string
-	nonvoluntary_ctxt_switches string
+	pid                   string
+	comm                  string
+	state                 string
+	ppid                  string
+	pgrp                  string
+	session               string
+	tty_nr                string
+	tpgid                 string
+	flags                 string
+	minflt                string
+	cminflt               string
+	majflt                string
+	cmajflt               string
+	utime                 string
+	stime                 string
+	cutime                string
+	cstime                string
+	priority              string
+	nice                  string
+	num_threads           string
+	itrealvalue           string
+	starttime             string
+	vsize                 string
+	rss                   string
+	rsslim                string
+	startcode             string
+	endcode               string
+	startstack            string
+	kstkesp               string
+	kstkeip               string
+	signal                string
+	blocked               string
+	sigignore             string
+	sigcatch              string
+	wchan                 string
+	nswap                 string
+	cnswap                string
+	exit_signal           string
+	processor             string
+	rt_priority           string
+	policy                string
+	delayacct_blkio_ticks string
+	guest_time            string
+	cguest_time           string
+	start_data            string
+	end_data              string
+	start_brk             string
+	arg_start             string
+	arg_end               string
+	env_start             string
+	env_end               string
+	exit_code             string
 }
 
 /* get_loadavg: */
@@ -253,14 +250,24 @@ func _get_swaps() swaps {
 	return s
 }
 
-// TODO
+/* _get_pps:
+	collects per-process stats from /proc/PID/stat file
+	and return a slice of procstat, containing per-process
+	information of all running processes in the system.
+	ps.: it doesn't have self stats, though.
+*/
 func _get_pps() []procstat {
+
+	var pps_s []procstat
+
 	files, err := ioutil.ReadDir(PROCDIR)
 	if err != nil {
-		//FIXME log.Fatal(err)
+		fmt.Printf("Error reading %s\n", PROCDIR)
 	}
+
+	// walking over /proc
 	for _, f := range files {
-		if f.Name() == "acpi" {
+		if f.Name() == "acpi" { // acpi is the first directory after the last PID
 			break
 		}
 
@@ -272,11 +279,66 @@ func _get_pps() []procstat {
 			continue
 		}
 
-		fmt.Println(pf)
 		dat_s := strings.Split(string(dat), " ")
-		fmt.Println(dat_s[1])
+
+		var p procstat
+		p.pid = dat_s[0]
+		p.comm = dat_s[1]
+		p.state = dat_s[2]
+		p.ppid = dat_s[3]
+		p.pgrp = dat_s[4]
+		p.session = dat_s[5]
+		p.tty_nr = dat_s[6]
+		p.tpgid = dat_s[7]
+		p.flags = dat_s[8]
+		p.minflt = dat_s[9]
+		p.cminflt = dat_s[10]
+		p.majflt = dat_s[11]
+		p.cmajflt = dat_s[12]
+		p.utime = dat_s[13]
+		p.stime = dat_s[14]
+		p.cutime = dat_s[15]
+		p.cstime = dat_s[16]
+		p.priority = dat_s[17]
+		p.nice = dat_s[18]
+		p.num_threads = dat_s[19]
+		p.itrealvalue = dat_s[20]
+		p.starttime = dat_s[21]
+		p.vsize = dat_s[22]
+		p.rss = dat_s[23]
+		p.rsslim = dat_s[24]
+		p.startcode = dat_s[25]
+		p.endcode = dat_s[26]
+		p.startstack = dat_s[27]
+		p.kstkesp = dat_s[28]
+		p.kstkeip = dat_s[29]
+		p.signal = dat_s[30]
+		p.blocked = dat_s[31]
+		p.sigignore = dat_s[32]
+		p.sigcatch = dat_s[33]
+		p.wchan = dat_s[34]
+		p.nswap = dat_s[35]
+		p.cnswap = dat_s[36]
+		p.exit_signal = dat_s[37]
+		p.processor = dat_s[38]
+		p.rt_priority = dat_s[39]
+		p.policy = dat_s[40]
+		p.delayacct_blkio_ticks = dat_s[41]
+		p.guest_time = dat_s[42]
+		p.cguest_time = dat_s[43]
+		p.start_data = dat_s[44]
+		p.end_data = dat_s[45]
+		p.start_brk = dat_s[46]
+		p.arg_start = dat_s[47]
+		p.arg_end = dat_s[48]
+		p.env_start = dat_s[49]
+		p.env_end = dat_s[50]
+		p.exit_code = dat_s[51]
+
+		// Append p element into pps_s slice
+		pps_s = append(pps_s, p)
 	}
-	return nil
+	return pps_s
 }
 
 /*******************/
@@ -332,7 +394,7 @@ func swap_header() {
 
 // TODO
 func pps_header() {
-	fmt.Printf("\t ---")
+	//	fmt.Printf("\t ---")
 }
 
 func loadavg_stat() {
@@ -350,6 +412,7 @@ func swap_stat() {
 	_print_swaps(s)
 }
 
+// TODO
 func pps_stat() {
 	pp := _get_pps() // pp is a slice
 	fmt.Println(pp)

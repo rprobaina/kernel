@@ -375,9 +375,16 @@ func _print_swaps(s swaps) {
 	fmt.Printf(t.Format("15:10:05")+" %s\t%s\n", s.size, s.used)
 }
 
-// TODO
-func _print_pps(p procstat) {
-	fmt.Println(p)
+func _print_pps(pps_s []procstat) {
+	t := time.Now()
+	for _, p := range pps_s {
+		fmt.Printf(t.Format("15:10:05")+" %s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
+			p.pid, p.comm, p.state, p.utime, p.stime, p.vsize, p.rss, p.nswap)
+			// FIXME - TODO
+			// - calc %usr, based on utime
+			// - calc %sys, based on stime
+			// - find a way to tabulate it better
+	}
 }
 
 func loadavg_header() {
@@ -392,9 +399,8 @@ func swap_header() {
 	fmt.Printf("\t swap total\tswap used\n")
 }
 
-// TODO
 func pps_header() {
-	//	fmt.Printf("\t ---")
+	fmt.Printf("\t pid\tcomm\t\tstate\tusr\tsys\tvsz\trss\tswap\n")
 }
 
 func loadavg_stat() {
@@ -412,11 +418,9 @@ func swap_stat() {
 	_print_swaps(s)
 }
 
-// TODO
 func pps_stat() {
-	pp := _get_pps() // pp is a slice
-	fmt.Println(pp)
-	//_print_pps()
+	pps_s := _get_pps() // pps_s is a slice
+	_print_pps(pps_s)
 }
 
 func help() {
